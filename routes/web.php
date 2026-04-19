@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\MenuController;
+use App\Http\Controllers\SiteAssetController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,10 @@ Route::get('/', function () {
     }
     return redirect()->route('home', ['locale' => $locale]);
 })->name('root');
+
+Route::get('/site-assets/{type}', [SiteAssetController::class, 'show'])
+    ->whereIn('type', ['logo', 'favicon', 'og-image'])
+    ->name('site-assets.show');
 
 /*
 |--------------------------------------------------------------------------

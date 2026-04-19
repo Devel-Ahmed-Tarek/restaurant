@@ -5,12 +5,14 @@
 @section('content')
 <div class="pb-4">
     <!-- Header (Mobile Only) -->
-    <div class="lg:hidden bg-primary-500 text-white px-4 pt-4 pb-8 rounded-b-3xl">
+    <div class="lg:hidden bg-primary-500 text-white px-4 pt-3 pb-8 rounded-b-3xl">
         <div class="flex items-center justify-between mb-4">
             <div>
                 <h1 class="text-2xl font-bold flex items-center gap-2">
                     @if(site_logo_url())
-                        <img src="{{ site_logo_url() }}" alt="{{ site_name() }}" class="h-8 w-auto max-w-[140px] object-contain brightness-0 invert">
+                        <span class="bg-white/95 rounded-lg px-2 py-1 inline-flex items-center">
+                            <img src="{{ site_logo_url() }}" alt="{{ site_name() }}" class="h-7 w-auto max-w-[130px] object-contain">
+                        </span>
                     @else
                         {{ site_name() }}
                     @endif

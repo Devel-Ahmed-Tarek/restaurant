@@ -48,7 +48,7 @@ if (!function_exists('site_logo_url')) {
     {
         $path = site_setting('site_logo');
 
-        return $path ? \Illuminate\Support\Facades\Storage::disk('public')->url($path) : null;
+        return $path ? route('site-assets.show', ['type' => 'logo']) : null;
     }
 }
 
@@ -57,7 +57,7 @@ if (!function_exists('site_favicon_url')) {
     {
         $path = site_setting('site_favicon');
 
-        return $path ? \Illuminate\Support\Facades\Storage::disk('public')->url($path) : null;
+        return $path ? route('site-assets.show', ['type' => 'favicon']) : null;
     }
 }
 
@@ -66,7 +66,7 @@ if (!function_exists('site_og_image_url')) {
     {
         $path = site_setting('og_image');
 
-        return $path ? \Illuminate\Support\Facades\Storage::disk('public')->url($path) : null;
+        return $path ? route('site-assets.show', ['type' => 'og-image']) : null;
     }
 }
 

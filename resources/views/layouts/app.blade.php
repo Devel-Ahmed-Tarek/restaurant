@@ -68,6 +68,30 @@
     @stack('styles')
 </head>
 <body class="bg-gray-100 min-h-screen font-sans antialiased" x-data>
+    @php
+        $currentPath = request()->path();
+        $pathWithoutLocale = preg_replace('#^(en|de)/?#', '', $currentPath) ?: '';
+        $urlEn = $pathWithoutLocale ? url('en/' . $pathWithoutLocale) : route('home', ['locale' => 'en']);
+        $urlDe = $pathWithoutLocale ? url('de/' . $pathWithoutLocale) : route('home', ['locale' => 'de']);
+    @endphp
+
+    <!-- Mobile Top Bar -->
+    <header class="lg:hidden sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-100">
+        <div class="px-4 h-14 flex items-center justify-between">
+            <a href="{{ locale_route('home') }}" class="flex items-center gap-2 min-w-0">
+                @if(site_logo_url())
+                    <img src="{{ site_logo_url() }}" alt="{{ site_name() }}" class="h-8 w-auto max-w-[140px] object-contain">
+                @else
+                    <span class="text-lg font-bold text-primary-500 truncate">{{ site_name() }}</span>
+                @endif
+            </a>
+            <div class="flex rounded-lg border border-gray-200 overflow-hidden shrink-0">
+                <a href="{{ $urlEn }}" class="px-2.5 py-1 text-xs font-semibold {{ app()->getLocale() === 'en' ? 'bg-primary-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50' }}">EN</a>
+                <a href="{{ $urlDe }}" class="px-2.5 py-1 text-xs font-semibold {{ app()->getLocale() === 'de' ? 'bg-primary-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50' }}">DE</a>
+            </div>
+        </div>
+    </header>
+
     <!-- Desktop Navigation -->
     <nav class="hidden lg:block bg-white shadow-sm sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -97,12 +121,6 @@
                 </div>
                 <div class="flex items-center gap-4">
                     <!-- Language Switcher -->
-                    @php
-                        $currentPath = request()->path();
-                        $pathWithoutLocale = preg_replace('#^(en|de)/?#', '', $currentPath) ?: '';
-                        $urlEn = $pathWithoutLocale ? url('en/' . $pathWithoutLocale) : route('home', ['locale' => 'en']);
-                        $urlDe = $pathWithoutLocale ? url('de/' . $pathWithoutLocale) : route('home', ['locale' => 'de']);
-                    @endphp
                     <div class="flex rounded-lg border border-gray-200 overflow-hidden">
                         <a href="{{ $urlEn }}" class="px-3 py-1.5 text-sm font-medium {{ app()->getLocale() === 'en' ? 'bg-primary-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50' }}">EN</a>
                         <a href="{{ $urlDe }}" class="px-3 py-1.5 text-sm font-medium {{ app()->getLocale() === 'de' ? 'bg-primary-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50' }}">DE</a>
