@@ -157,6 +157,7 @@
     @include('components.site-social')
     @include('components.bottom-nav')
     @include('components.cart-button')
+    @include('components.chat-widget')
     
     @stack('scripts')
 

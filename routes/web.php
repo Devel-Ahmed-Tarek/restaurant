@@ -15,6 +15,7 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\SiteAssetController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ChatController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -54,6 +55,9 @@ Route::prefix('{locale}')
 
         // API routes for products (used by product modal)
         Route::get('/api/products/{product}', [MenuController::class, 'show'])->name('api.products.show');
+
+        // AI Chat routes
+        Route::post('/chat', [ChatController::class, 'send'])->name('chat.send');
     });
 
 /*
