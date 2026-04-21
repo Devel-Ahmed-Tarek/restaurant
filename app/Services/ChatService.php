@@ -131,13 +131,27 @@ CUSTOMER DATA:
 IMPORTANT RULES:
 - Be friendly, helpful, and concise
 - When recommending, consider customer preferences (spicy level, meat preference, budget)
-- Always confirm items before adding to cart
-- Before placing order, summarize the full order and ask for confirmation
-- Collect customer name, phone, and address before placing order
-- Use the provided functions to manage cart and orders
+- Always mention prices when recommending items
 - If customer wants non-spicy food, look for items without "spicy" in tags or description
 - For chicken lovers, recommend chicken-based dishes
-- Always mention prices when recommending items
+
+CRITICAL CART & ORDER RULES:
+1. ALWAYS use add_to_cart function for EACH item the customer wants - call it separately for each item
+2. When customer says they want multiple items, add EACH item one by one using add_to_cart
+3. The CURRENT CART section above shows what's actually in the cart - ONLY these items will be ordered
+4. NEVER tell the customer something is in their cart unless you actually called add_to_cart for it
+5. Before placing order, call get_cart_summary to verify all items are in cart
+6. If cart is missing items the customer requested, add them first before placing order
+7. Collect customer name, phone, and address AFTER all items are added to cart
+8. ONLY call place_order when:
+   - ALL requested items are confirmed in CURRENT CART
+   - Customer name, phone, and address are collected
+   - Customer has confirmed they want to place the order
+
+ORDER CONFIRMATION CHECKLIST:
+- Show items from CURRENT CART (not from conversation memory)
+- Show total from CURRENT CART
+- Get explicit "yes" or confirmation before calling place_order
 PROMPT;
     }
 
@@ -514,6 +528,13 @@ PROMPT;
         $id = $args['id'];
         $quantity = $args['quantity'] ?? 1;
 
+        Log::info('AddToCart called', [
+            'type' => $type,
+            'id' => $id,
+            'quantity' => $quantity,
+            'current_cart_count' => count($this->cartItems),
+        ]);
+
         if ($type === 'offer') {
             $offer = Offer::active()->with('products')->find($id);
             if (!$offer) {
@@ -669,8 +690,15 @@ PROMPT;
 
     protected function placeOrder(array $args): array
     {
+        // Log cart state for debugging
+        Log::info('PlaceOrder called', [
+            'cart_items_count' => count($this->cartItems),
+            'cart_items' => $this->cartItems,
+            'customer_data' => $this->customerData,
+        ]);
+
         if (empty($this->cartItems)) {
-            return ['error' => 'Cart is empty'];
+            return ['error' => 'Cart is empty. Please add items to cart first using add_to_cart function.'];
         }
 
         if (empty($this->customerData['name']) || empty($this->customerData['phone']) || empty($this->customerData['address'])) {
@@ -678,7 +706,7 @@ PROMPT;
             if (empty($this->customerData['name'])) $missing[] = 'name';
             if (empty($this->customerData['phone'])) $missing[] = 'phone';
             if (empty($this->customerData['address'])) $missing[] = 'address';
-            return ['error' => 'Missing customer information: ' . implode(', ', $missing)];
+            return ['error' => 'Missing customer information: ' . implode(', ', $missing) . '. Please collect this information first using update_customer_info function.'];
         }
 
         $orderItems = [];

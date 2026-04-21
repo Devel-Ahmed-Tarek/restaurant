@@ -23,7 +23,7 @@
         x-transition:leave="transition ease-in duration-200"
         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
         x-transition:leave-end="opacity-0 translate-y-4 scale-95"
-        class="w-[350px] sm:w-[400px] h-[500px] sm:h-[550px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200"
+        class="w-[350px] sm:w-[400px] h-[500px] sm:h-[550px] max-h-[80vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200"
     >
         {{-- Header --}}
         <div class="bg-primary-500 text-white px-4 py-3 flex items-center justify-between shrink-0">
@@ -48,7 +48,8 @@
         {{-- Messages Area --}}
         <div 
             x-ref="messagesContainer"
-            class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50"
+            class="chat-messages-scroll flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-4 bg-gray-50"
+            style="-webkit-overflow-scrolling: touch;"
         >
             {{-- Welcome Message --}}
             <template x-if="messages.length === 0">
@@ -84,7 +85,7 @@
                         :class="msg.role === 'user' 
                             ? 'bg-primary-500 text-white rounded-2xl rounded-br-md' 
                             : 'bg-white text-gray-800 rounded-2xl rounded-bl-md shadow-sm border border-gray-100'"
-                        class="max-w-[85%] px-4 py-3 text-sm"
+                        class="max-w-[85%] px-4 py-3 text-sm chat-message-content"
                     >
                         <div x-html="formatMessage(msg.content)"></div>
                     </div>
@@ -277,12 +278,21 @@ function chatWidget() {
 
         formatMessage(content) {
             if (!content) return '';
+            
+            // Convert URLs to clickable links (before other formatting)
+            let formatted = content.replace(
+                /(https?:\/\/[^\s\)]+)/g, 
+                '<a href="$1" target="_blank" rel="noopener">$1</a>'
+            );
+            
             // Convert markdown-like formatting
-            return content
+            formatted = formatted
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                 .replace(/\*(.*?)\*/g, '<em>$1</em>')
                 .replace(/\n/g, '<br>')
                 .replace(/- (.*?)(?=<br>|$)/g, '• $1');
+            
+            return formatted;
         },
 
         formatMoney(amount) {
@@ -302,5 +312,46 @@ function chatWidget() {
 @keyframes bounce {
     0%, 60%, 100% { transform: translateY(0); }
     30% { transform: translateY(-4px); }
+}
+
+/* Chat scroll styling */
+.chat-messages-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.chat-messages-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-messages-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-messages-scroll::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 3px;
+}
+
+.chat-messages-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8;
+}
+
+/* Message content styling */
+.chat-message-content {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+}
+
+.chat-message-content a {
+    color: inherit;
+    text-decoration: underline;
+    word-break: break-all;
+}
+
+.chat-message-content a:hover {
+    opacity: 0.8;
 }
 </style>
