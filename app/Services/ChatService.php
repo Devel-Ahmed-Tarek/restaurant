@@ -6,8 +6,8 @@ use App\Models\Category;
 use App\Models\Offer;
 use App\Models\Order;
 use App\Models\Product;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use OpenAI\Laravel\Facades\OpenAI;
 
 class ChatService
 {
@@ -36,7 +36,7 @@ class ChatService
         ];
 
         try {
-            $response = OpenAI::chat()->create([
+            $response = $this->callOpenAI([
                 'model' => config('services.openai.model', 'gpt-4o-mini'),
                 'messages' => array_merge(
                     [['role' => 'system', 'content' => $systemPrompt]],
@@ -48,20 +48,24 @@ class ChatService
                 'max_tokens' => 1000,
             ]);
 
-            $assistantMessage = $response->choices[0]->message;
+            if (!$response['success']) {
+                throw new \Exception($response['error']);
+            }
+
+            $assistantMessage = $response['data']['choices'][0]['message'];
             
-            if ($assistantMessage->functionCall) {
+            if (isset($assistantMessage['function_call'])) {
                 return $this->handleFunctionCall($assistantMessage);
             }
 
             $this->conversationHistory[] = [
                 'role' => 'assistant',
-                'content' => $assistantMessage->content,
+                'content' => $assistantMessage['content'],
             ];
 
             return [
                 'success' => true,
-                'message' => $assistantMessage->content,
+                'message' => $assistantMessage['content'],
                 'history' => $this->conversationHistory,
                 'cart' => $this->cartItems,
                 'customer' => $this->customerData,
@@ -359,10 +363,11 @@ PROMPT;
         ];
     }
 
-    protected function handleFunctionCall($assistantMessage): array
+    protected function handleFunctionCall(array $assistantMessage): array
     {
-        $functionName = $assistantMessage->functionCall->name;
-        $arguments = json_decode($assistantMessage->functionCall->arguments, true) ?? [];
+        $functionCall = $assistantMessage['function_call'];
+        $functionName = $functionCall['name'];
+        $arguments = json_decode($functionCall['arguments'], true) ?? [];
 
         $result = match($functionName) {
             'search_menu' => $this->searchMenu($arguments),
@@ -380,7 +385,7 @@ PROMPT;
             'content' => null,
             'function_call' => [
                 'name' => $functionName,
-                'arguments' => $assistantMessage->functionCall->arguments,
+                'arguments' => $functionCall['arguments'],
             ],
         ];
 
@@ -390,7 +395,7 @@ PROMPT;
             'content' => json_encode($result),
         ];
 
-        $followUp = OpenAI::chat()->create([
+        $followUpResponse = $this->callOpenAI([
             'model' => config('services.openai.model', 'gpt-4o-mini'),
             'messages' => array_merge(
                 [['role' => 'system', 'content' => $this->buildSystemPrompt()]],
@@ -400,7 +405,7 @@ PROMPT;
             'max_tokens' => 1000,
         ]);
 
-        $finalMessage = $followUp->choices[0]->message->content;
+        $finalMessage = $followUpResponse['data']['choices'][0]['message']['content'] ?? 'Sorry, I could not process that.';
 
         $this->conversationHistory[] = [
             'role' => 'assistant',
@@ -719,6 +724,45 @@ PROMPT;
         }
 
         return ['error' => $data['message'] ?? 'Failed to place order'];
+    }
+
+    protected function callOpenAI(array $payload): array
+    {
+        $apiKey = config('services.openai.api_key') ?: env('OPENAI_API_KEY');
+        
+        if (empty($apiKey)) {
+            return [
+                'success' => false,
+                'error' => 'OpenAI API key is not configured',
+            ];
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+                'Content-Type' => 'application/json',
+            ])
+            ->timeout(60)
+            ->post('https://api.openai.com/v1/chat/completions', $payload);
+
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'data' => $response->json(),
+                ];
+            }
+
+            $error = $response->json();
+            return [
+                'success' => false,
+                'error' => $error['error']['message'] ?? 'OpenAI API error: ' . $response->status(),
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => 'Failed to connect to OpenAI: ' . $e->getMessage(),
+            ];
+        }
     }
 
     protected function getErrorMessage(): string
